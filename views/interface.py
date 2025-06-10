@@ -3,18 +3,23 @@ from tkinter import ttk, messagebox, font
 from controllers.stock_controller import StockController
 
 class Interface:
-    def __init__(self):
+    def __init__(self, on_logout=None):
         self.root = tk.Tk()
         self.root.title("Gestion de Stock - Moderne")
         self.root.geometry("950x700")
         self.root.configure(bg="#f5f6fa")
         self.controller = StockController()
         self.table = None
+        self.on_logout = on_logout
         self.afficher_interface()
 
     def afficher_interface(self):
         for widget in self.root.winfo_children():
             widget.destroy()
+
+        # Bouton Déconnexion
+        tk.Button(self.root, text="Déconnexion", bg="#e84118", fg="white", font=("Segoe UI", 10, "bold"),
+                  command=self.deconnexion).pack(anchor="ne", padx=20, pady=10)
 
         # Titre principal
         title_font = font.Font(family="Segoe UI", size=22, weight="bold")
@@ -60,9 +65,9 @@ class Interface:
             setattr(self, attr, entry)
 
         # Boutons d'action stylisés
-        frame_btn = tk.Frame(frame_form, bg="#f5f6fa")
+        frame_btn = tk.Frame(frame_form, bg="#ffffff")
         frame_btn.grid(row=0, column=2, rowspan=6, padx=20)
-        btn_style = {"font": label_font, "width": 18, "bd": 0, "relief": tk.RIDGE, "activebackground": "#dff9fb"}
+        btn_style = {"font": label_font, "width": 18, "bd": 0, "relief": tk.RIDGE, "activebackground": "#ffffff"}
 
         tk.Button(frame_btn, text="Ajouter Produit", bg="#44bd32", fg="white", command=self.ajouter_produit, **btn_style).pack(pady=5)
         tk.Button(frame_btn, text="Modifier Produit", bg="#0097e6", fg="white", command=self.modifier_produit, **btn_style).pack(pady=5)
@@ -83,6 +88,11 @@ class Interface:
                   command=lambda: self.enregistrer_mouvement("sortie"), **btn_style).grid(row=2, column=1, padx=10, pady=5)
 
         self.ajouter_boutons_rapport()
+
+    def deconnexion(self):
+        self.root.destroy()
+        if self.on_logout:
+            self.on_logout()
 
     def afficher_produits(self):
         produits = self.controller.lister_produits()
