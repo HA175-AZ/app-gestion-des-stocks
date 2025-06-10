@@ -11,22 +11,40 @@ class Interface:
         self.controller = StockController()
         self.table = None
         self.on_logout = on_logout
+
+        # --- Canvas et Scrollbar pour toute l'interface ---
+        self.canvas = tk.Canvas(self.root, bg="#f5f6fa", highlightthickness=0)
+        self.scrollbar = tk.Scrollbar(self.root, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = tk.Frame(self.canvas, bg="#f5f6fa")
+
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(
+                scrollregion=self.canvas.bbox("all")
+            )
+        )
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.scrollbar.pack(side="right", fill="y")
+
         self.afficher_interface()
 
     def afficher_interface(self):
-        for widget in self.root.winfo_children():
+        for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
 
         # Bouton Déconnexion
-        tk.Button(self.root, text="Déconnexion", bg="#e84118", fg="white", font=("Segoe UI", 10, "bold"),
+        tk.Button(self.scrollable_frame, text="Déconnexion", bg="#e84118", fg="white", font=("Segoe UI", 10, "bold"),
                   command=self.deconnexion).pack(anchor="ne", padx=20, pady=10)
 
         # Titre principal
         title_font = font.Font(family="Segoe UI", size=22, weight="bold")
-        tk.Label(self.root, text="Gestion de Stock", bg="#f5f6fa", fg="#273c75", font=title_font).pack(pady=(20, 10))
+        tk.Label(self.scrollable_frame, text="Gestion de Stock", bg="#f5f6fa", fg="#273c75", font=title_font).pack(pady=(20, 10))
 
         # --- Section Tableau Produits ---
-        frame_tableau = tk.LabelFrame(self.root, text="Produits", bg="#ffffff", fg="#273c75", font=("Segoe UI", 12, "bold"), bd=2, relief=tk.GROOVE)
+        frame_tableau = tk.LabelFrame(self.scrollable_frame, text="Produits", bg="#ffffff", fg="#273c75", font=("Segoe UI", 12, "bold"), bd=2, relief=tk.GROOVE)
         frame_tableau.pack(pady=10, padx=30, fill="x")
 
         style = ttk.Style()
@@ -34,17 +52,28 @@ class Interface:
         style.configure("Treeview", font=("Segoe UI", 10), rowheight=28, background="#f5f6fa", fieldbackground="#f5f6fa")
         style.map("Treeview", background=[("selected", "#dff9fb")])
 
-        self.table = ttk.Treeview(frame_tableau, columns=("ID", "Nom", "Description", "Quantité", "Prix"), show="headings", height=7)
+        # Scrollbar pour le tableau
+        scrollbar_table = tk.Scrollbar(frame_tableau, orient="vertical")
+        self.table = ttk.Treeview(
+            frame_tableau,
+            columns=("ID", "Nom", "Description", "Quantité", "Prix"),
+            show="headings",
+            height=7,
+            yscrollcommand=scrollbar_table.set
+        )
+        scrollbar_table.config(command=self.table.yview)
+        scrollbar_table.pack(side="right", fill="y")
+        self.table.pack(fill="x", padx=10, pady=10)
+
         for col in ("ID", "Nom", "Description", "Quantité", "Prix"):
             self.table.heading(col, text=col)
             self.table.column(col, anchor="center", width=120)
-        self.table.pack(fill="x", padx=10, pady=10)
         self.table.bind("<<TreeviewSelect>>", self.remplir_champs_modification)
 
         self.afficher_produits()
 
         # --- Section Formulaire Produit ---
-        frame_form = tk.LabelFrame(self.root, text="Ajouter / Modifier / Supprimer un produit", bg="#f5f6fa", fg="#273c75", font=("Segoe UI", 12, "bold"))
+        frame_form = tk.LabelFrame(self.scrollable_frame, text="Ajouter / Modifier / Supprimer un produit", bg="#f5f6fa", fg="#273c75", font=("Segoe UI", 12, "bold"))
         frame_form.pack(pady=10, padx=30, fill="x")
 
         label_font = font.Font(family="Segoe UI", size=11)
@@ -74,7 +103,7 @@ class Interface:
         tk.Button(frame_btn, text="Supprimer Produit", bg="#e84118", fg="white", command=self.supprimer_produit, **btn_style).pack(pady=5)
 
         # --- Section Entrée / Sortie de Stock ---
-        frame_mv = tk.LabelFrame(self.root, text="Entrée / Sortie de Stock", bg="#f5f6fa", fg="#273c75", font=("Segoe UI", 12, "bold"))
+        frame_mv = tk.LabelFrame(self.scrollable_frame, text="Entrée / Sortie de Stock", bg="#f5f6fa", fg="#273c75", font=("Segoe UI", 12, "bold"))
         frame_mv.pack(pady=15, padx=30, fill="x")
         tk.Label(frame_mv, text="ID Produit:", bg="#f5f6fa", font=label_font).grid(row=0, column=0, padx=5, pady=5)
         self.id_mouvement_entry = tk.Entry(frame_mv, font=label_font, width=entry_width)
@@ -203,7 +232,7 @@ class Interface:
             table.insert("", tk.END, values=(produit, variation, stock_actuel, rupture, besoin_reappro))
 
     def ajouter_boutons_rapport(self):
-        frame_rapport = tk.Frame(self.root, bg="#f5f6fa")
+        frame_rapport = tk.Frame(self.scrollable_frame, bg="#f5f6fa")
         frame_rapport.pack(pady=10)
         btn_style = {"font": ("Segoe UI", 11), "width": 18, "bd": 0, "relief": tk.RIDGE, "activebackground": "#dff9fb"}
         tk.Button(frame_rapport, text="Rapport Quotidien", command=lambda: self.afficher_rapport_stock("quotidien"),
