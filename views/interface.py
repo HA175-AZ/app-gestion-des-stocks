@@ -11,6 +11,7 @@ class Interface:
         self.controller = StockController()
         self.table = None
         self.on_logout = on_logout
+        
 
         # --- Canvas et Scrollbar pour toute l'interface ---
         self.canvas = tk.Canvas(self.root, bg="#f5f6fa", highlightthickness=0)
